@@ -20,22 +20,40 @@ class Menu(BaseModel):
         orm_mode = True
 
 
-class SubMenu(BaseModel):
-    id: int
+class SubMenuCreate(BaseModel):
     title: str
     description: str
-    menu: int
+    menu_id: None = 0
+
+    class Config:
+        orm_mode = True
+
+
+class SubMenu(BaseModel):
+    id: str
+    title: str
+    description: str
+    dishes_count: int = 0
+
+    class Config:
+        orm_mode = True
+
+
+class DishCreate(BaseModel):
+    title: str
+    description: str
+    price: str
+    submenu_id: None = 0
 
     class Config:
         orm_mode = True
 
 
 class Dish(BaseModel):
-    id: int
+    id: str
     title: str
     description: str
-    price: float
-    submenu: int
+    price: str
 
     class Config:
         orm_mode = True
