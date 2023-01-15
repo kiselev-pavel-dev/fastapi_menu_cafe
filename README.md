@@ -26,7 +26,11 @@
 
 ```pip install -r requirements.txt```
 
-5. Создать и наполнить файл .env:
+5. Перейти в категорию app:
+
+```cd app```
+
+6. Создать и наполнить файл .env:
 ```
 DB_NAME=postgres
 POSTGRES_USER=postgres
@@ -34,10 +38,6 @@ POSTGRES_PASSWORD=postgres
 DB_HOST=db
 DB_PORT=5432
 ```
-
-6. Перейти в категорию app:
-
-```cd app```
 
 7. Запустить проект:
 
