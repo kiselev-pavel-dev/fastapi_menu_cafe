@@ -2,9 +2,5 @@ version: '3.3'
 services:
   postgres:
     image: postgres:13.0-alpine
-    environment:
-      POSTGRES_DB: "test_db"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-    ports:
-      - "5432:5432"
+    env_file:
+      - ./app/.env

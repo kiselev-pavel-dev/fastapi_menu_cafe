@@ -1,12 +1,12 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Generic, List, Optional, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from db.database import Base
-from models import Menu, SubMenu, Dish
 import schemas
+from db.database import Base
+from models import Dish, Menu, SubMenu
 
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -31,7 +31,12 @@ class BaseActions(Generic[ModelType, CreateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def update(self, db: Session, obj_curr: ModelType, obj_update: ModelType) -> ModelType:
+    def update(
+        self,
+        db: Session,
+        obj_curr: ModelType,
+        obj_update: ModelType
+    ) -> ModelType:
         obj_curr.title = obj_update.title
         obj_curr.description = obj_update.description
         db.add(obj_curr)
@@ -40,7 +45,7 @@ class BaseActions(Generic[ModelType, CreateSchemaType]):
         return obj_curr
 
     def delete(self, db: Session, id: int, message: str) -> ModelType:
-        obj = db.query(self.model).filter(self.model.id == id).delete()
+        db.query(self.model).filter(self.model.id == id).delete()
         db.commit()
         return {"status": True, "message": message}
 
