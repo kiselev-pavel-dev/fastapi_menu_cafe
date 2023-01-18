@@ -4,10 +4,10 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
-import actions
-import schemas
-import models
-from db.database import SessionLocal, engine
+from services import actions
+from models import schemas
+import tables as models
+from database import SessionLocal, engine
 
 
 models.Base.metadata.create_all(bind=engine)
