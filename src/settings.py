@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     DB_HOST: str
     DB_PORT: int
-    DB_NAME: str
-    DB_NAME_TEST: str
+    POSTGRES_DB: str
+    POSTGRES_DB_TESTS: str
     docker_mode: bool = True
 
     class Config:

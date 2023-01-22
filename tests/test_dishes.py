@@ -11,19 +11,14 @@ client = TestClient(app=app)
 db = next(override_get_db())
 
 
-@pytest.fixture(name="create_menu")
-def create_menu():
+@pytest.fixture(autouse=True)
+def create_fixtures():
     menu = {"title": "Тестовое меню",
             "description": "Описание тестового меню"}
     db_obj = Menu(**menu)
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
-    return db_obj
-
-
-@pytest.fixture(name="create_submenu")
-def create_submenu():
     menu = db.query(Menu).first()
     submenu = {"title": "Тестовое подменю",
                "description": "Описание тестового подменю",
@@ -33,12 +28,6 @@ def create_submenu():
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
-    return db_obj
-
-
-@pytest.fixture(name="create_dish")
-def create_dish():
-    menu = db.query(Menu).first()
     submenu = db.query(SubMenu).filter_by(menu_id=menu.id).first()
     dish = {"title": "Тестовое блюдо",
             "description": "Описание тестового блюда",
@@ -52,7 +41,6 @@ def create_dish():
     return db_obj
 
 
-@pytest.mark.usefixtures("create_menu", "create_submenu", "create_dish")
 def test_get_dishes_list():
     menu = db.query(Menu).first()
     submenu = db.query(SubMenu).filter_by(menu_id=menu.id).first()

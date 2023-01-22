@@ -11,7 +11,7 @@ client = TestClient(app=app)
 db = next(override_get_db())
 
 
-@pytest.fixture(name="create_menu")
+@pytest.fixture(autouse=True)
 def create_menu():
     menu = {"title": "Тестовое меню", "description": "Описание тестового меню"}
     db_obj = Menu(**menu)
@@ -21,7 +21,6 @@ def create_menu():
     return db_obj
 
 
-@pytest.mark.usefixtures("create_menu")
 def test_get_list_menus():
     count_menu = db.query(Menu).count()
     url = "/api/v1/menus"
