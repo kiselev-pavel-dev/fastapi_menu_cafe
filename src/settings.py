@@ -7,9 +7,11 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     DB_NAME: str
+    DB_NAME_TEST: str
+    docker_mode: bool = True
 
     class Config:
         env_file = "./.env"
 
 
-settings = Settings()
+settings = Settings(docker_mode=True)

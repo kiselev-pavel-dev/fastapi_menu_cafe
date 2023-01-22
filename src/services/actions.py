@@ -4,8 +4,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from models import schemas
-from tables import Menu, SubMenu, Dish
+from ..models import schemas
+from ..tables import Menu, SubMenu, Dish
 
 
 ModelType = TypeVar("ModelType", bound=BaseModel)

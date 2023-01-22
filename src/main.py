@@ -4,23 +4,15 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
-from services import actions
-from models import schemas
-import tables as models
-from database import SessionLocal, engine
+from .services import actions
+from .models import schemas
+from . import tables as models
+from .database import engine, get_db
 
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @app.get("/api/v1/menus", response_model=List[schemas.Menu])
@@ -66,7 +58,7 @@ def patch_menu(
     db: Session = Depends(get_db)
 ):
     menu_curr = actions.menu.get(db=db, id=menu_id)
-    if not menu:
+    if not menu_curr:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND,
                             detail="menu not found")
     menu_curr = actions.menu.update(db=db, obj_curr=menu_curr, obj_update=menu)

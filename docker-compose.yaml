@@ -1,6 +1,33 @@
-version: '3.3'
+version: '3.8'
 services:
-  postgres:
-    image: postgres:13.0-alpine
+  db:
+    image: postgres:15.1-alpine
+    volumes:
+      - db:/var/lib/postgresql/data/
     env_file:
-      - ./app/.env
+      - ./.env
+    networks:
+      - web_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src/
+    env_file:
+      - ./.env
+    ports:
+      - "8000:8000"
+    networks:
+      - web_network
+
+volumes:
+  db:
+
+
+networks:
+  web_network:
+    name: web_network
