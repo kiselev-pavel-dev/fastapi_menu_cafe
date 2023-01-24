@@ -1,3 +1,4 @@
+alembic==1.9.2
 anyio==3.6.2
 attrs==22.2.0
 autopep8==2.0.1
@@ -16,6 +17,8 @@ httpx==0.23.3
 idna==3.4
 iniconfig==2.0.0
 isort==5.11.4
+Mako==1.2.4
+MarkupSafe==2.1.2
 mccabe==0.7.0
 packaging==23.0
 pluggy==1.0.0

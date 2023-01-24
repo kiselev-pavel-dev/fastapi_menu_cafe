@@ -35,6 +35,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 DB_HOST=db
 DB_PORT=5432
+PGUSER=postgres
 ```
 6. Если запускаете проект локально, то в файле src/settings.py укажите:
 
