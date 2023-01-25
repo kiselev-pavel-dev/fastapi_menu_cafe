@@ -1,11 +1,15 @@
 version: '3.8'
 services:
-  db:
+  db_tests:
     image: postgres:15.1-alpine
+    volumes:
+      - db_tests:/var/lib/postgresql/data/
     env_file:
       - ./.env
+    environment:
+      - DB_HOST=db_tests
     ports:
-      - "5432:5432"
+      - "5431:5432"
     networks:
       - tests_network
     healthcheck:
@@ -20,10 +24,12 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./.env
+    environment:
+      - DB_HOST=db_tests
     volumes:
       - ./src:/app/src/
     depends_on:
-      db:
+      db_tests:
         condition: service_healthy
     command: "pytest -vv"
     networks:
@@ -32,3 +38,6 @@ services:
 networks:
   tests_network:
     name: tests_network
+
+volumes:
+  db_tests:
