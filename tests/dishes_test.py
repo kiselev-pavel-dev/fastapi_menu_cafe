@@ -1,11 +1,14 @@
 import json
+
 import pytest
-
 from fastapi.testclient import TestClient
-from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND, HTTP_201_CREATED, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import (HTTP_200_OK, HTTP_201_CREATED,
+                              HTTP_404_NOT_FOUND,
+                              HTTP_422_UNPROCESSABLE_ENTITY)
 
-from src.tables import Dish, Menu, SubMenu
-from .conf_test_db import app, override_get_db
+from src.models.models import Dish, Menu, SubMenu
+
+from .conf_db_test import app, override_get_db
 
 client = TestClient(app=app)
 db = next(override_get_db())

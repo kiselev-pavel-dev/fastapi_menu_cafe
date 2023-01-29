@@ -1,219 +1,259 @@
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
-from starlette.status import HTTP_201_CREATED, HTTP_404_NOT_FOUND
+from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
-from .services import actions
-from .models import schemas
-from . import tables as models
-from .database import engine, get_db
-
-
-models.Base.metadata.create_all(bind=engine)
+from src.db.database import get_db
+from src.schemas import schemas
+from src.services.services import (
+    dish_services, menu_services,
+    submenu_services,
+)
 
 app = FastAPI()
 
 
-@app.get("/api/v1/menus", response_model=List[schemas.Menu])
-def list_menus(db: Session = Depends(get_db)):
-    menus = actions.menu.get_all(db=db)
-    for menu in menus:
-        menu.submenus_count = db.query(models.SubMenu).filter(
-            models.SubMenu.menu_id == menu.id).count()
-        menu.dishes_count = db.query(models.Dish).filter(
-            models.Dish.submenu_id == models.SubMenu.id).filter(
-            models.SubMenu.menu_id == menu.id).count()
-    return menus
+@app.get(
+    "/api/v1/menus",
+    response_model=List[schemas.Menu],
+    summary="Список меню",
+    description="Получение списка всех меню",
+    status_code=HTTP_200_OK,
+)
+def list_menus(session: Session = Depends(get_db)):
+    return menu_services.get_list_menus(session=session)
 
 
-@app.get("/api/v1/menus/{menu_id}", response_model=schemas.Menu)
-def get_menu(menu_id: int, db: Session = Depends(get_db)):
-    menu = actions.menu.get(db=db, id=menu_id)
-    if not menu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="menu not found")
-    menu.submenus_count = db.query(models.SubMenu).filter(
-        models.SubMenu.menu_id == menu_id).count()
-    menu.dishes_count = db.query(models.Dish).filter(
-        models.Dish.submenu_id == models.SubMenu.id).filter(
-        models.SubMenu.menu_id == menu_id).count()
-    return menu
+@app.get(
+    "/api/v1/menus/{menu_id}",
+    response_model=schemas.Menu,
+    summary="Получить меню",
+    description="Получение меню по его идентификатору",
+    status_code=HTTP_200_OK,
+)
+def get_menu(menu_id: int, session: Session = Depends(get_db)):
+    return menu_services.get_menu(session=session, id=menu_id)
 
 
 @app.post(
     "/api/v1/menus",
     response_model=schemas.Menu,
-    status_code=HTTP_201_CREATED
+    summary="Создать меню",
+    description="Создание меню",
+    status_code=HTTP_201_CREATED,
 )
-def create_menu(menu: schemas.MenuCreate, db: Session = Depends(get_db)):
-    menu = actions.menu.create(db=db, obj=menu)
-    return menu
+def create_menu(menu: schemas.MenuCreate, session: Session = Depends(get_db)):
+    return menu_services.create_menu(session=session, menu=menu)
 
 
-@app.patch("/api/v1/menus/{menu_id}", response_model=schemas.Menu)
+@app.patch(
+    "/api/v1/menus/{menu_id}",
+    response_model=schemas.Menu,
+    summary="Обновить меню",
+    description="Обновление меню",
+    status_code=HTTP_200_OK,
+)
 def patch_menu(
     menu_id: int,
-    menu: schemas.MenuCreate,
-    db: Session = Depends(get_db)
+    menu: schemas.MenuUpdate,
+    session: Session = Depends(get_db),
 ):
-    menu_curr = actions.menu.get(db=db, id=menu_id)
-    if not menu_curr:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="menu not found")
-    menu_curr = actions.menu.update(db=db, obj_curr=menu_curr, obj_update=menu)
-    return menu_curr
+    return menu_services.update_menu(session=session, id=menu_id, menu=menu)
 
 
-@app.delete("/api/v1/menus/{menu_id}")
-def delete_menu(menu_id: int, db: Session = Depends(get_db)):
-    menu = actions.menu.get(db=db, id=menu_id)
-    if not menu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="menu not found")
-    message = "The menu has been deleted"
-    menu = actions.menu.delete(db=db, id=menu_id, message=message)
-    return menu
+@app.delete(
+    "/api/v1/menus/{menu_id}",
+    response_model=schemas.MenuDelete,
+    summary="Удалить меню",
+    description="Удаление меню",
+    status_code=HTTP_200_OK,
+)
+def delete_menu(menu_id: int, session: Session = Depends(get_db)):
+    return menu_services.delete_menu(session=session, id=menu_id)
 
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus",
-    response_model=List[schemas.SubMenu]
+    response_model=List[schemas.SubMenu],
+    summary="Список подменю",
+    description="Получение списка подменю определенного меню",
+    status_code=HTTP_200_OK,
 )
-def list_submenus(menu_id: int, db: Session = Depends(get_db)):
-    submenus = actions.submenu.get_all(db=db, id=menu_id)
-    for submenu in submenus:
-        submenu.dishes_count = db.query(models.Dish).filter(
-            models.Dish.submenu_id == submenu.id).count()
-    return submenus
+def list_submenus(menu_id: int, session: Session = Depends(get_db)):
+    return submenu_services.get_submenu_list(session=session, id=menu_id)
 
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}",
-    response_model=schemas.SubMenu
+    response_model=schemas.SubMenu,
+    summary="Получить подменю",
+    description="Получение подменю по его идентификатору",
+    status_code=HTTP_200_OK,
 )
-def get_submenu(submenu_id: int, db: Session = Depends(get_db)):
-    submenu = actions.submenu.get(db=db, id=submenu_id)
-    if not submenu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="submenu not found")
-    submenu.dishes_count = db.query(models.Dish).filter(
-        models.Dish.submenu_id == submenu.id).count()
-    return submenu
+def get_submenu(
+    submenu_id: int,
+    menu_id: int,
+    session: Session = Depends(get_db),
+):
+    return submenu_services.get_submenu(
+        session=session,
+        id=submenu_id,
+        menu_id=menu_id,
+    )
 
 
 @app.post(
     "/api/v1/menus/{menu_id}/submenus",
     response_model=schemas.SubMenu,
-    status_code=HTTP_201_CREATED
+    summary="Создать подменю",
+    description="Создание подменю",
+    status_code=HTTP_201_CREATED,
 )
 def create_submenu(
     menu_id: int,
     submenu: schemas.SubMenuCreate,
-    db: Session = Depends(get_db)
+    session: Session = Depends(get_db),
 ):
-    menu = actions.menu.get(db=db, id=menu_id)
-    if not menu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="menu not found")
-    submenu.menu_id = menu_id
-    submenu = actions.submenu.create(db=db, obj=submenu)
-    return submenu
+    return submenu_services.create_submenu(
+        session=session,
+        submenu=submenu,
+        menu_id=menu_id,
+    )
 
 
-@app.delete("/api/v1/menus/{menu_id}/submenus/{submenu_id}")
-def delete_submenu(submenu_id: int, db: Session = Depends(get_db)):
-    submenu = actions.submenu.get(db=db, id=submenu_id)
-    if not submenu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="Submenu not found")
-    message = "The submenu has been deleted"
-    submenu = actions.submenu.delete(db=db, id=submenu_id, message=message)
-    return submenu
+@app.delete(
+    "/api/v1/menus/{menu_id}/submenus/{submenu_id}",
+    response_model=schemas.SubMenuDelete,
+    summary="Удалить подменю",
+    description="Удаление подменю",
+    status_code=HTTP_200_OK,
+)
+def delete_submenu(submenu_id: int, session: Session = Depends(get_db)):
+    return submenu_services.delete_submenu(session=session, id=submenu_id)
 
 
 @app.patch(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}",
-    response_model=schemas.SubMenu
+    response_model=schemas.SubMenu,
+    summary="Обновить подменю",
+    description="Обновление подменю",
+    status_code=HTTP_200_OK,
 )
 def patch_submenu(
     submenu_id: int,
-    submenu: schemas.SubMenuCreate,
-    db: Session = Depends(get_db)
+    menu_id: int,
+    submenu: schemas.SubMenuUpdate,
+    session: Session = Depends(get_db),
 ):
-    submenu_curr = actions.submenu.get(db=db, id=submenu_id)
-    if not submenu_curr:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="submenu not found")
-    submenu_curr = actions.submenu.update(
-        db=db, obj_curr=submenu_curr, obj_update=submenu)
-    return submenu_curr
+    return submenu_services.update_submenu(
+        session=session,
+        id=submenu_id,
+        menu_id=menu_id,
+        submenu=submenu,
+    )
 
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes",
-    response_model=List[schemas.Dish]
+    response_model=List[schemas.Dish],
+    summary="Список блюд",
+    description="Получение списка блюд",
+    status_code=HTTP_200_OK,
 )
-def list_dishes(submenu_id: int, db: Session = Depends(get_db)):
-    dishes = actions.dish.get_all(db=db, id=submenu_id)
-    return dishes
+def list_dishes(
+    submenu_id: int,
+    menu_id: int,
+    session: Session = Depends(get_db),
+):
+    return dish_services.get_list_dishes(
+        session=session,
+        submenu_id=submenu_id,
+        menu_id=menu_id,
+    )
 
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-    response_model=schemas.Dish
+    response_model=schemas.Dish,
+    summary="Получить блюдо",
+    description="Получение блюда",
+    status_code=HTTP_200_OK,
 )
-def get_dish(dish_id: int, db: Session = Depends(get_db)):
-    dish = actions.dish.get(db=db, id=dish_id)
-    if not dish:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="dish not found")
-    return dish
+def get_dish(
+    dish_id: int,
+    menu_id: int,
+    submenu_id: int,
+    session: Session = Depends(get_db),
+):
+    return dish_services.get_dish(
+        session=session,
+        id=dish_id,
+        menu_id=menu_id,
+        submenu_id=submenu_id,
+    )
 
 
 @app.post(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes",
     response_model=schemas.Dish,
-    status_code=HTTP_201_CREATED
+    summary="Создать блюдо",
+    description="Создание блюда",
+    status_code=HTTP_201_CREATED,
 )
-def create_dish(dish: schemas.DishCreate,
-                submenu_id: int,
-                db: Session = Depends(get_db)
-                ):
-    submenu = actions.submenu.get(db=db, id=submenu_id)
-    if not submenu:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="submenu not found")
-    dish.submenu_id = submenu_id
-    dish = actions.dish.create(db=db, obj=dish)
-    return dish
-
-
-@app.delete("/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}")
-def delete_dish(dish_id: int, db: Session = Depends(get_db)):
-    dish = actions.dish.get(db=db, id=dish_id)
-    if not dish:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="dish not found")
-    message = "The dish has been deleted"
-    dish = actions.dish.delete(db=db, id=dish_id, message=message)
-    return dish
+def create_dish(
+    dish: schemas.DishCreate,
+    submenu_id: int,
+    menu_id: int,
+    session: Session = Depends(get_db),
+):
+    return dish_services.create_dish(
+        session=session,
+        submenu_id=submenu_id,
+        menu_id=menu_id,
+        dish=dish,
+    )
 
 
 @app.patch(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
-    response_model=schemas.Dish
+    response_model=schemas.Dish,
+    summary="Обновить блюдо",
+    description="Обновление блюда",
+    status_code=HTTP_200_OK,
 )
 def patch_dish(
     dish_id,
+    menu_id: int,
+    submenu_id: int,
     dish: schemas.DishCreate,
-    db: Session = Depends(get_db)
+    session: Session = Depends(get_db),
 ):
-    dish_curr = actions.dish.get(db=db, id=dish_id)
-    if not dish_curr:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                            detail="dish not found")
-    dish_curr.price = dish.price
-    dish_curr = actions.dish.update(
-        db=db, obj_curr=dish_curr, obj_update=dish)
-    return dish_curr
+    return dish_services.update_dish(
+        session=session,
+        id=dish_id,
+        dish=dish,
+        menu_id=menu_id,
+        submenu_id=submenu_id,
+    )
+
+
+@app.delete(
+    "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/{dish_id}",
+    description="Удаление блюда",
+    summary="Удалить блюдо",
+    response_model=schemas.DishDelete,
+    status_code=HTTP_200_OK,
+)
+def delete_dish(
+    dish_id: int,
+    menu_id: int,
+    submenu_id: int,
+    session: Session = Depends(get_db),
+):
+    return dish_services.delete_dish(
+        session=session,
+        id=dish_id,
+        menu_id=menu_id,
+        submenu_id=submenu_id,
+    )

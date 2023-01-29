@@ -1,15 +1,11 @@
 import os
-
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
-
-from src.tables import Base
-
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from src.models.models import Base
 
 load_dotenv()
 
@@ -25,8 +21,10 @@ config = context.config
 
 section = config.config_ini_section
 config.set_section_option(section, "POSTGRES_USER", POSTGRES_USER)
-config.set_section_option(section, "POSTGRES_PASSWORD",
-                          POSTGRES_PASSWORD)
+config.set_section_option(
+    section, "POSTGRES_PASSWORD",
+    POSTGRES_PASSWORD,
+)
 config.set_section_option(section, "DB_HOST", DB_HOST)
 config.set_section_option(section, "POSTGRES_DB", POSTGRES_DB)
 config.set_section_option(section, "DB_PORT", DB_PORT)
@@ -87,7 +85,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata,
         )
 
         with context.begin_transaction():

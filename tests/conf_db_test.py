@@ -1,11 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils.functions import database_exists, create_database
+from sqlalchemy_utils.functions import create_database, database_exists
 
-from src.settings import settings
-from src.database import get_db
+from src.db.database import get_db
 from src.main import app
-from src.tables import Base
+from src.models.models import Base
+from src.settings import settings
 
 POSTGRES_USER = settings.POSTGRES_USER
 POSTGRES_PASSWORD = settings.POSTGRES_PASSWORD
@@ -25,7 +25,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine)
 
-# Base.metadata.drop_all(bind=engine)
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 

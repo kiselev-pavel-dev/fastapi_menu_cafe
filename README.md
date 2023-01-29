@@ -3,11 +3,11 @@
 
 # Технологии:
     Python 3.10
-    FastAPI 
+    FastAPI
     PostgreSQL
     Pytest
     Docker (docker-compose)
-    
+
 # Запуск и работа с проектом
 
 1. Клонировать репозиторий к себе на локальную машину:
@@ -58,8 +58,3 @@ PGUSER=postgres
 Автор:
 
 Павел Киселев
-
-
-
-
-
