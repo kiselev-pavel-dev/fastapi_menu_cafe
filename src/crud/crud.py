@@ -40,8 +40,10 @@ class MenuCrud:
 
     def get_dishes_count(self, id: int) -> int:
         return self.session.query(Dish).filter(
-            Dish.submenu_id == SubMenu.id).filter(
-            SubMenu.menu_id == id).count()
+            Dish.submenu_id == SubMenu.id,
+        ).filter(
+            SubMenu.menu_id == id,
+        ).count()
 
 
 @dataclass
@@ -81,7 +83,8 @@ class SubmenuCrud:
 
     def get_dishes_count(self, id: int) -> int:
         return self.session.query(Dish).filter(
-            Dish.submenu_id == id).count()
+            Dish.submenu_id == id,
+        ).count()
 
 
 @dataclass
@@ -106,7 +109,7 @@ class DishCrud:
         id: int,
         title: str,
         description: str,
-        price: str
+        price: str,
     ) -> schemas.Dish:
         dish = self.session.query(Dish).filter_by(id=id).one()
         dish.title = title

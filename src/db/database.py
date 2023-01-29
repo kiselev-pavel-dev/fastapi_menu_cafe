@@ -16,7 +16,7 @@ if not settings.docker_mode:
 SQLALCHEMY_DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

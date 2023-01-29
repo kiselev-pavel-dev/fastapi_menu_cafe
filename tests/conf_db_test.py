@@ -23,7 +23,8 @@ if not database_exists(SQLALCHEMY_DATABASE_URL):
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=engine)
+    autocommit=False, autoflush=False, bind=engine,
+)
 
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)

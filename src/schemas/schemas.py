@@ -10,8 +10,8 @@ class BaseMenu(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Menu title",
-                "description": "Menu description"
-            }
+                "description": "Menu description",
+            },
         }
 
 
@@ -24,8 +24,8 @@ class MenuUpdate(BaseMenu):
         schema_extra = {
             "example": {
                 "title": "New menu title",
-                "description": "New menu description"
-            }
+                "description": "New menu description",
+            },
         }
 
 
@@ -41,8 +41,8 @@ class Menu(BaseMenu):
                 "title": "Menu title",
                 "description": "Menu description",
                 "submenus_count": 0,
-                "dishes_count": 0
-            }
+                "dishes_count": 0,
+            },
         }
 
 
@@ -51,8 +51,12 @@ class MenuDelete(BaseModel):
     message: str = "The menu has been deleted"
 
     class Config:
-        schema_extra = {"example": {"status": True,
-                                    "message": "The menu has been deleted"}}
+        schema_extra = {
+            "example": {
+                "status": True,
+                "message": "The menu has been deleted",
+            },
+        }
 
 
 class BaseSubMenu(BaseModel):
@@ -64,8 +68,8 @@ class BaseSubMenu(BaseModel):
         schema_extra = {
             "example": {
                 "title": "Submenu title",
-                "description": "Submenu description"
-            }
+                "description": "Submenu description",
+            },
         }
 
 
@@ -78,8 +82,8 @@ class SubMenuUpdate(BaseSubMenu):
         schema_extra = {
             "example": {
                 "title": "New submenu title",
-                "description": "New submenu description"
-            }
+                "description": "New submenu description",
+            },
         }
 
 
@@ -93,8 +97,8 @@ class SubMenu(BaseSubMenu):
                 "id": "1",
                 "title": "Submenu title",
                 "description": "Submenu description",
-                "dishes_count": 0
-            }
+                "dishes_count": 0,
+            },
         }
 
 
@@ -103,8 +107,12 @@ class SubMenuDelete(BaseModel):
     message: str = "The submenu has been deleted"
 
     class Config:
-        schema_extra = {"example": {"status": True,
-                                    "message": "The submenu has been deleted"}}
+        schema_extra = {
+            "example": {
+                "status": True,
+                "message": "The submenu has been deleted",
+            },
+        }
 
 
 class BaseDish(BaseModel):
@@ -118,8 +126,8 @@ class BaseDish(BaseModel):
             "example": {
                 "title": "Dish title",
                 "description": "Dish description",
-                "price": "22.87"
-            }
+                "price": "22.87",
+            },
         }
 
 
@@ -133,8 +141,8 @@ class DishUpdate(BaseDish):
             "example": {
                 "title": "New dish title",
                 "description": "New dish description",
-                "price": "77.77"
-            }
+                "price": "77.77",
+            },
         }
 
 
@@ -147,8 +155,8 @@ class Dish(BaseDish):
                 "id": "1",
                 "title": "Dish title",
                 "description": "Dish description",
-                "price": "22.87"
-            }
+                "price": "22.87",
+            },
         }
 
 
@@ -157,5 +165,9 @@ class DishDelete(BaseModel):
     message: str = "The dish has been deleted"
 
     class Config:
-        schema_extra = {"example": {"status": True,
-                                    "message": "The dish has been deleted"}}
+        schema_extra = {
+            "example": {
+                "status": True,
+                "message": "The dish has been deleted",
+            },
+        }

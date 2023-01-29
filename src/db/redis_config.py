@@ -12,6 +12,6 @@ if not settings.docker_mode:
 pool = redis.ConnectionPool(
     host=REDIS_HOST,
     port=REDIS_PORT,
-    db=REDIS_DB
+    db=REDIS_DB,
 )
 redis_cache = redis.Redis(connection_pool=pool)

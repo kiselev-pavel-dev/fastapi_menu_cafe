@@ -7,9 +7,11 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from src.crud.cache import cache
 from src.crud.crud import DishCrud, MenuCrud, SubmenuCrud
-from src.schemas.schemas import (Dish, DishCreate, DishUpdate, Menu,
-                                 MenuCreate, MenuUpdate, SubMenu,
-                                 SubMenuCreate, SubMenuUpdate)
+from src.schemas.schemas import (
+    Dish, DishCreate, DishUpdate, Menu,
+    MenuCreate, MenuUpdate, SubMenu,
+    SubMenuCreate, SubMenuUpdate,
+)
 
 
 class MenuServices:
@@ -67,9 +69,10 @@ class MenuServices:
 
     def menu_empty(self, empty: bool) -> None:
         if empty:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                                detail="menu not found"
-                                )
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail="menu not found",
+            )
 
 
 class SubmenuServices:
@@ -94,7 +97,8 @@ class SubmenuServices:
             submenus = crud.get_submenu_list(id=id)
             for submenu in submenus:
                 submenu.dishes_count = crud.get_dishes_count(
-                    id=int(submenu.id))
+                    id=int(submenu.id),
+                )
             cache.set(redis_key, submenus)
         return submenus
 
@@ -102,10 +106,12 @@ class SubmenuServices:
         self,
         session: Session,
         submenu: SubMenuCreate,
-        menu_id: int
+        menu_id: int,
     ) -> SubMenu:
-        redis_keys = [f"menu:{menu_id}",
-                      "menu:list", f"submenu:{menu_id}:list"]
+        redis_keys = [
+            f"menu:{menu_id}",
+            "menu:list", f"submenu:{menu_id}:list",
+        ]
         cache.delete_one(redis_keys)
         menu_services.get_menu(session=session, id=menu_id)
         crud = SubmenuCrud(session=session)
@@ -118,23 +124,24 @@ class SubmenuServices:
         session: Session,
         id: int,
         menu_id: int,
-        submenu: SubMenuUpdate
+        submenu: SubMenuUpdate,
     ) -> SubMenu:
         redis_keys = [
             f"menu:{menu_id}",
             "menu:list",
             f"submenu:{menu_id}:list",
-            f"submenu:{menu_id}:{id}"
+            f"submenu:{menu_id}:{id}",
         ]
         current_submenu = self.get_submenu(
-            session=session, id=id, menu_id=menu_id)
+            session=session, id=id, menu_id=menu_id,
+        )
         self.submenu_empty(not current_submenu)
         crud = SubmenuCrud(session=session)
         cache.delete_one(redis_keys)
         return crud.update_submenu(
             id=id,
             title=submenu.title,
-            description=submenu.description
+            description=submenu.description,
         )
 
     def delete_submenu(self, session: Session, id: int) -> Dict:
@@ -146,16 +153,17 @@ class SubmenuServices:
             f"menu:{submenu.menu_id}",
             "menu:list",
             f"submenu:{submenu.menu_id}:list",
-            f"submenu:{submenu.menu_id}:{id}"
+            f"submenu:{submenu.menu_id}:{id}",
         ]
         cache.delete_one(redis_keys)
         return {"status": True, "message": "The submenu has been deleted"}
 
     def submenu_empty(self, empty: bool) -> None:
         if empty:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                                detail="submenu not found"
-                                )
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail="submenu not found",
+            )
 
 
 class DishServices:
@@ -165,7 +173,7 @@ class DishServices:
         session: Session,
         id: int,
         menu_id: int,
-        submenu_id: int
+        submenu_id: int,
     ) -> Dish:
         redis_key = f"dish:{menu_id}:{submenu_id}:{id}"
         dish = cache.get(redis_key)
@@ -180,7 +188,7 @@ class DishServices:
         self,
         session: Session,
         submenu_id: int,
-        menu_id: int
+        menu_id: int,
     ) -> List[Dish]:
         redis_key = f"dish:{menu_id}:{submenu_id}:list"
         dishes = cache.get(redis_key)
@@ -195,15 +203,17 @@ class DishServices:
         session: Session,
         submenu_id: int,
         menu_id: int,
-        dish: DishCreate
+        dish: DishCreate,
     ) -> Dish:
         redis_keys = [
-            f"menu:{menu_id}", f"menu:list",
+            f"menu:{menu_id}",
+            "menu:list",
             f"submenu:{menu_id}:list",
-            f"submenu:{menu_id}:{submenu_id}"
+            f"submenu:{menu_id}:{submenu_id}",
         ]
         submenu_services.get_submenu(
-            session=session, id=submenu_id, menu_id=menu_id)
+            session=session, id=submenu_id, menu_id=menu_id,
+        )
         crud = DishCrud(session=session)
         data = jsonable_encoder(dish)
         cache.delete_one(redis_keys)
@@ -215,16 +225,19 @@ class DishServices:
         id: int,
         menu_id: int,
         submenu_id: int,
-        dish: DishUpdate
+        dish: DishUpdate,
     ) -> Dish:
         current_dish = self.get_dish(
-            session=session, id=id, menu_id=menu_id, submenu_id=submenu_id)
-        redis_keys = [f"menu:{menu_id}", f"menu:list",
-                      f"submenu:{menu_id}:list",
-                      f"submenu:{menu_id}:{submenu_id}",
-                      f"dish:{menu_id}:{submenu_id}:{id}",
-                      f"dish:{menu_id}:{submenu_id}:list"
-                      ]
+            session=session, id=id, menu_id=menu_id, submenu_id=submenu_id,
+        )
+        redis_keys = [
+            f"menu:{menu_id}",
+            "menu:list",
+            f"submenu:{menu_id}:list",
+            f"submenu:{menu_id}:{submenu_id}",
+            f"dish:{menu_id}:{submenu_id}:{id}",
+            f"dish:{menu_id}:{submenu_id}:list",
+        ]
         cache.delete_one(redis_keys)
         self.dish_empty(not current_dish)
         crud = DishCrud(session=session)
@@ -232,7 +245,7 @@ class DishServices:
             id=id,
             title=dish.title,
             description=dish.description,
-            price=dish.price
+            price=dish.price,
         )
 
     def delete_dish(
@@ -240,10 +253,12 @@ class DishServices:
         session: Session,
         id: int,
         menu_id: int,
-        submenu_id: int
+        submenu_id: int,
     ) -> Dict:
-        redis_keys = [f"dish:{menu_id}:{submenu_id}:{id}",
-                      f"dish:{menu_id}:{submenu_id}:list"]
+        redis_keys = [
+            f"dish:{menu_id}:{submenu_id}:{id}",
+            f"dish:{menu_id}:{submenu_id}:list",
+        ]
         crud = DishCrud(session=session)
         dish = crud.get_dish(id=id)
         self.dish_empty(not dish)
@@ -253,9 +268,10 @@ class DishServices:
 
     def dish_empty(self, empty: bool) -> None:
         if empty:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND,
-                                detail="dish not found"
-                                )
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail="dish not found",
+            )
 
 
 menu_services = MenuServices()

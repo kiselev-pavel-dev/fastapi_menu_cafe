@@ -2,9 +2,11 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from starlette.status import (HTTP_200_OK, HTTP_201_CREATED,
-                              HTTP_404_NOT_FOUND,
-                              HTTP_422_UNPROCESSABLE_ENTITY)
+from starlette.status import (
+    HTTP_200_OK, HTTP_201_CREATED,
+    HTTP_404_NOT_FOUND,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+)
 
 from src.models.models import Menu
 
@@ -30,7 +32,7 @@ def test_get_list_menus():
     response = client.get(url)
     assert response.status_code == HTTP_200_OK
     assert len(response.json()) == count_menu
-    assert isinstance(response.json(), list) == True
+    assert isinstance(response.json(), list) is True
 
 
 def test_get_menu():
@@ -64,10 +66,10 @@ def test_create_menu():
     count_menu_new = db.query(Menu).count()
     assert response.status_code == HTTP_201_CREATED
     assert count_menu_new == count_menu + 1
-    assert isinstance(response.json(), dict) == True
+    assert isinstance(response.json(), dict) is True
     assert response.json()["title"] == data["title"]
     assert response.json()["description"] == data["description"]
-    assert isinstance(response.json()["id"], str) == True
+    assert isinstance(response.json()["id"], str) is True
 
 
 def test_update_menu():
@@ -79,8 +81,8 @@ def test_update_menu():
     data = {"title": "New title", "description": "New_description"}
     response = client.patch(url, data=json.dumps(data))
     assert response.status_code == HTTP_200_OK
-    assert isinstance(response.json(), dict) == True
-    assert isinstance(response.json()["id"], str) == True
+    assert isinstance(response.json(), dict) is True
+    assert isinstance(response.json()["id"], str) is True
     assert response.json()["title"] == data["title"]
     assert response.json()["description"] == data["description"]
 
@@ -101,5 +103,5 @@ def test_delete_menu():
     count_menus_new = db.query(Menu).count()
     assert response.status_code == HTTP_200_OK
     assert count_menus == count_menus_new + 1
-    assert response.json()["status"] == True
+    assert response.json()["status"] is True
     assert response.json()["message"] == "The menu has been deleted"

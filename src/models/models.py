@@ -19,8 +19,10 @@ class SubMenu(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     title = Column(String, index=True)
     description = Column(String, index=True)
-    menu_id = Column(Integer, ForeignKey("menus.id", ondelete="CASCADE"),
-                     nullable=False)
+    menu_id = Column(
+        Integer, ForeignKey("menus.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     menu = relationship("Menu", backref="submenus")
 
 
@@ -30,6 +32,9 @@ class Dish(Base):
     title = Column(String, index=True)
     description = Column(String, index=True)
     price = Column(String)
-    submenu_id = Column(Integer, ForeignKey(
-        "submenus.id", ondelete="CASCADE"), nullable=False)
+    submenu_id = Column(
+        Integer, ForeignKey(
+            "submenus.id", ondelete="CASCADE",
+        ), nullable=False,
+    )
     submenu = relationship("SubMenu", backref="dishes")
