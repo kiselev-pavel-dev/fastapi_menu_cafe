@@ -17,6 +17,24 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  redis_test:
+    image: redis:latest
+    expose:
+      - 6379
+    ports:
+      - "6378:6379"
+    environment:
+      - REDIS_HOST=redis_test
+      - REDIS_PORT=6379
+      - REDIS_DB=1
+    networks:
+      - tests_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 20s
+      retries: 100
   tests:
     container_name: tests
     build:
@@ -26,6 +44,8 @@ services:
       - ./.env
     environment:
       - DB_HOST=db_tests
+      - REDIS_HOST=redis_test
+      - REDIS_DB=1
     volumes:
       - ./src:/app/src/
     depends_on:

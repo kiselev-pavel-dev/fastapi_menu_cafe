@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
 from src.db.database import get_db
+from src.db.redis_config import pool, redis
 from src.schemas import schemas
 from src.services.services import (
     dish_services, menu_services,
@@ -12,6 +13,11 @@ from src.services.services import (
 )
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup():
+    redis.Redis(connection_pool=pool)
 
 
 @app.get(
