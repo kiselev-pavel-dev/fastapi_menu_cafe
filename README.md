@@ -37,9 +37,10 @@ DB_HOST=db
 DB_PORT=5432
 PGUSER=postgres
 
-REDIS_HOST=localhost
+REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
+
 ```
 6. Если запускаете проект локально, то в файле src/settings.py укажите:
 
