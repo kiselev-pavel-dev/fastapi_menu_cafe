@@ -1,15 +1,13 @@
 from typing import List
 
-from fastapi import Depends, FastAPI
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, Depends
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
-from src.db.database import get_db
 from src.db.redis_config import pool, redis
 from src.schemas import schemas
 from src.services.services import (
     dish_services, menu_services,
-    submenu_services,
+    submenu_services, MenuServices, SubmenuServices, DishServices,
 )
 
 app = FastAPI()
@@ -27,8 +25,8 @@ async def startup():
     description="Получение списка всех меню",
     status_code=HTTP_200_OK,
 )
-def list_menus(session: Session = Depends(get_db)):
-    return menu_services.get_list_menus(session=session)
+def list_menus(service: MenuServices = Depends(menu_services)):
+    return service.get_list_menus()
 
 
 @app.get(
@@ -38,8 +36,8 @@ def list_menus(session: Session = Depends(get_db)):
     description="Получение меню по его идентификатору",
     status_code=HTTP_200_OK,
 )
-def get_menu(menu_id: int, session: Session = Depends(get_db)):
-    return menu_services.get_menu(session=session, id=menu_id)
+def get_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
+    return service.get_menu(id=menu_id)
 
 
 @app.post(
@@ -49,8 +47,11 @@ def get_menu(menu_id: int, session: Session = Depends(get_db)):
     description="Создание меню",
     status_code=HTTP_201_CREATED,
 )
-def create_menu(menu: schemas.MenuCreate, session: Session = Depends(get_db)):
-    return menu_services.create_menu(session=session, menu=menu)
+def create_menu(
+    menu: schemas.MenuCreate,
+    service: MenuServices = Depends(menu_services),
+):
+    return service.create_menu(menu=menu)
 
 
 @app.patch(
@@ -63,9 +64,9 @@ def create_menu(menu: schemas.MenuCreate, session: Session = Depends(get_db)):
 def patch_menu(
     menu_id: int,
     menu: schemas.MenuUpdate,
-    session: Session = Depends(get_db),
+    service: MenuServices = Depends(menu_services),
 ):
-    return menu_services.update_menu(session=session, id=menu_id, menu=menu)
+    return service.update_menu(id=menu_id, menu=menu)
 
 
 @app.delete(
@@ -75,8 +76,8 @@ def patch_menu(
     description="Удаление меню",
     status_code=HTTP_200_OK,
 )
-def delete_menu(menu_id: int, session: Session = Depends(get_db)):
-    return menu_services.delete_menu(session=session, id=menu_id)
+def delete_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
+    return service.delete_menu(id=menu_id)
 
 
 @app.get(
@@ -86,8 +87,8 @@ def delete_menu(menu_id: int, session: Session = Depends(get_db)):
     description="Получение списка подменю определенного меню",
     status_code=HTTP_200_OK,
 )
-def list_submenus(menu_id: int, session: Session = Depends(get_db)):
-    return submenu_services.get_submenu_list(session=session, id=menu_id)
+def list_submenus(menu_id: int, service: SubmenuServices = Depends(submenu_services)):
+    return service.get_submenu_list(id=menu_id)
 
 
 @app.get(
@@ -100,10 +101,9 @@ def list_submenus(menu_id: int, session: Session = Depends(get_db)):
 def get_submenu(
     submenu_id: int,
     menu_id: int,
-    session: Session = Depends(get_db),
+    service: SubmenuServices = Depends(submenu_services),
 ):
-    return submenu_services.get_submenu(
-        session=session,
+    return service.get_submenu(
         id=submenu_id,
         menu_id=menu_id,
     )
@@ -119,10 +119,9 @@ def get_submenu(
 def create_submenu(
     menu_id: int,
     submenu: schemas.SubMenuCreate,
-    session: Session = Depends(get_db),
+    service: SubmenuServices = Depends(submenu_services),
 ):
-    return submenu_services.create_submenu(
-        session=session,
+    return service.create_submenu(
         submenu=submenu,
         menu_id=menu_id,
     )
@@ -135,8 +134,11 @@ def create_submenu(
     description="Удаление подменю",
     status_code=HTTP_200_OK,
 )
-def delete_submenu(submenu_id: int, session: Session = Depends(get_db)):
-    return submenu_services.delete_submenu(session=session, id=submenu_id)
+def delete_submenu(
+    submenu_id: int,
+    service: SubmenuServices = Depends(submenu_services),
+):
+    return service.delete_submenu(id=submenu_id)
 
 
 @app.patch(
@@ -150,10 +152,9 @@ def patch_submenu(
     submenu_id: int,
     menu_id: int,
     submenu: schemas.SubMenuUpdate,
-    session: Session = Depends(get_db),
+    service: SubmenuServices = Depends(submenu_services),
 ):
-    return submenu_services.update_submenu(
-        session=session,
+    return service.update_submenu(
         id=submenu_id,
         menu_id=menu_id,
         submenu=submenu,
@@ -170,10 +171,9 @@ def patch_submenu(
 def list_dishes(
     submenu_id: int,
     menu_id: int,
-    session: Session = Depends(get_db),
+    service: DishServices = Depends(dish_services),
 ):
-    return dish_services.get_list_dishes(
-        session=session,
+    return service.get_list_dishes(
         submenu_id=submenu_id,
         menu_id=menu_id,
     )
@@ -190,10 +190,9 @@ def get_dish(
     dish_id: int,
     menu_id: int,
     submenu_id: int,
-    session: Session = Depends(get_db),
+    service: DishServices = Depends(dish_services),
 ):
-    return dish_services.get_dish(
-        session=session,
+    return service.get_dish(
         id=dish_id,
         menu_id=menu_id,
         submenu_id=submenu_id,
@@ -211,10 +210,9 @@ def create_dish(
     dish: schemas.DishCreate,
     submenu_id: int,
     menu_id: int,
-    session: Session = Depends(get_db),
+    service: DishServices = Depends(dish_services),
 ):
-    return dish_services.create_dish(
-        session=session,
+    return service.create_dish(
         submenu_id=submenu_id,
         menu_id=menu_id,
         dish=dish,
@@ -233,10 +231,9 @@ def patch_dish(
     menu_id: int,
     submenu_id: int,
     dish: schemas.DishCreate,
-    session: Session = Depends(get_db),
+    service: DishServices = Depends(dish_services),
 ):
-    return dish_services.update_dish(
-        session=session,
+    return service.update_dish(
         id=dish_id,
         dish=dish,
         menu_id=menu_id,
@@ -255,10 +252,9 @@ def delete_dish(
     dish_id: int,
     menu_id: int,
     submenu_id: int,
-    session: Session = Depends(get_db),
+    service: DishServices = Depends(dish_services),
 ):
-    return dish_services.delete_dish(
-        session=session,
+    return service.delete_dish(
         id=dish_id,
         menu_id=menu_id,
         submenu_id=submenu_id,

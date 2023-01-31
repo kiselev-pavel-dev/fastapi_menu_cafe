@@ -1,16 +1,11 @@
-from dataclasses import dataclass
 from typing import Dict, List
-
-from sqlalchemy.orm import Session
 
 from src.models.models import Dish, Menu, SubMenu
 from src.schemas import schemas
+from src.crud.base import BaseCrud
 
 
-@dataclass
-class MenuCrud:
-
-    session: Session
+class MenuCrud(BaseCrud):
 
     def get_menu_list(self) -> List[schemas.Menu]:
         return self.session.query(Menu).all()
@@ -46,9 +41,7 @@ class MenuCrud:
         ).count()
 
 
-@dataclass
-class SubmenuCrud:
-    session: Session
+class SubmenuCrud(BaseCrud):
 
     def get_submenu(self, id: int) -> schemas.SubMenu:
         return self.session.query(SubMenu).filter_by(id=id).first()
@@ -87,9 +80,7 @@ class SubmenuCrud:
         ).count()
 
 
-@dataclass
-class DishCrud:
-    session: Session
+class DishCrud(BaseCrud):
 
     def get_dish(self, id: int) -> schemas.Dish:
         return self.session.query(Dish).filter_by(id=id).first()
