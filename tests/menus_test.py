@@ -1,85 +1,82 @@
 import json
 
 import pytest
-from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 from starlette.status import (
-    HTTP_200_OK, HTTP_201_CREATED,
+    HTTP_200_OK,
+    HTTP_201_CREATED,
     HTTP_404_NOT_FOUND,
     HTTP_422_UNPROCESSABLE_ENTITY,
 )
 
 from src.models.models import Menu
 
-from .conf_db_test import app, override_get_db
 
-client = TestClient(app=app)
-db = next(override_get_db())
-
-
-@pytest.fixture(autouse=True)
-def create_menu():
-    menu = {"title": "Тестовое меню", "description": "Описание тестового меню"}
-    db_obj = Menu(**menu)
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
-
-
-def test_get_list_menus():
-    count_menu = db.query(Menu).count()
+@pytest.mark.asyncio
+async def test_get_list_menus(client, create_menu, db):
+    statement = select(func.count(Menu.id))
+    result = await db.execute(statement)
+    count = result.scalar()
     url = "/api/v1/menus"
-    response = client.get(url)
+    response = await client.get(url)
     assert response.status_code == HTTP_200_OK
-    assert len(response.json()) == count_menu
+    assert len(response.json()) == count
     assert isinstance(response.json(), list) is True
 
 
-def test_get_menu():
-    menu = db.query(Menu).first()
-    url = f"/api/v1/menus/{menu.id}"
-    response = client.get(url)
+@pytest.mark.asyncio
+async def test_get_menu(menu_data, client, create_menu):
+    id = menu_data["id"]
+    url = f"/api/v1/menus/{id}"
+    response = await client.get(url)
     assert response.status_code == HTTP_200_OK
-    assert response.json()["id"] == str(menu.id)
-    assert response.json()["title"] == menu.title
-    assert response.json()["description"] == menu.description
+    assert response.json()["id"] == str(menu_data["id"])
+    assert response.json()["title"] == menu_data["title"]
+    assert response.json()["description"] == menu_data["description"]
 
 
-def test_get_menu_not_found():
+@pytest.mark.asyncio
+async def test_get_menu_not_found(client):
     url = "/api/v1/menus/1111"
-    response = client.get(url)
+    response = await client.get(url)
     assert response.status_code == HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "menu not found"
 
 
-def test_create_menu():
+@pytest.mark.asyncio
+async def test_create_menu(db, client):
     url = "/api/v1/menus"
-    count_menu = db.query(Menu).count()
+    statement = select(func.count(Menu.id))
+    result = await db.execute(statement)
+    count_menus = result.scalar()
     data = {}
-    response = client.post(url, data=json.dumps(data))
+    response = await client.post(url, data=json.dumps(data))
     assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
     data = {"title": "Test"}
-    response = client.post(url, data=json.dumps(data))
+    response = await client.post(url, data=json.dumps(data))
     assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
     data = {"title": "Test title", "description": "Test description"}
-    response = client.post(url, data=json.dumps(data))
-    count_menu_new = db.query(Menu).count()
+    response = await client.post(url, data=json.dumps(data))
+    statement = select(func.count(Menu.id))
+    result = await db.execute(statement)
+    count_menus_new = result.scalar()
     assert response.status_code == HTTP_201_CREATED
-    assert count_menu_new == count_menu + 1
+    assert count_menus_new == count_menus + 1
     assert isinstance(response.json(), dict) is True
     assert response.json()["title"] == data["title"]
     assert response.json()["description"] == data["description"]
     assert isinstance(response.json()["id"], str) is True
 
 
-def test_update_menu():
-    menu = db.query(Menu).first()
+@pytest.mark.asyncio
+async def test_update_menu(create_menu, db, client):
+    menu = create_menu
     url = f"/api/v1/menus/{menu.id}"
     data = {"title": "New title"}
-    response = client.patch(url, data=json.dumps(data))
+    response = await client.patch(url, data=json.dumps(data))
     assert response.status_code == HTTP_422_UNPROCESSABLE_ENTITY
     data = {"title": "New title", "description": "New_description"}
-    response = client.patch(url, data=json.dumps(data))
+    response = await client.patch(url, data=json.dumps(data))
     assert response.status_code == HTTP_200_OK
     assert isinstance(response.json(), dict) is True
     assert isinstance(response.json()["id"], str) is True
@@ -87,21 +84,29 @@ def test_update_menu():
     assert response.json()["description"] == data["description"]
 
 
-def test_update_menu_not_found():
+@pytest.mark.asyncio
+async def test_update_menu_not_found(client):
     url = "/api/v1/menus/1111"
     data = {"title": "New title", "description": "New_description"}
-    response = client.patch(url, data=json.dumps(data))
+    response = await client.patch(url, data=json.dumps(data))
     assert response.status_code == HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "menu not found"
 
 
-def test_delete_menu():
-    menu = db.query(Menu).first()
-    count_menus = db.query(Menu).count()
+@pytest.mark.asyncio
+async def test_delete_menu(client, create_menu, db):
+    menu = create_menu
+    statement = select(func.count(Menu.id))
+    result = await db.execute(statement)
+    count_menus = result.scalar()
     url = f"/api/v1/menus/{menu.id}"
-    response = client.delete(url)
-    count_menus_new = db.query(Menu).count()
+    response = await client.delete(url)
+    statement = select(func.count(Menu.id))
+    result = await db.execute(statement)
+    count_menus_new = result.scalar()
     assert response.status_code == HTTP_200_OK
     assert count_menus == count_menus_new + 1
     assert response.json()["status"] is True
     assert response.json()["message"] == "The menu has been deleted"
+    response = await client.delete(url)
+    assert response.status_code == HTTP_404_NOT_FOUND

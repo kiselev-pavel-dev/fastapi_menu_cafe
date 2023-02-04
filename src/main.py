@@ -1,13 +1,16 @@
-from typing import List
-
-from fastapi import FastAPI, Depends
+import aioredis
+from fastapi import Depends, FastAPI
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
-from src.db.redis_config import pool, redis
+from src.db.redis_config import REDIS_URL
 from src.schemas import schemas
 from src.services.services import (
-    dish_services, menu_services,
-    submenu_services, MenuServices, SubmenuServices, DishServices,
+    DishServices,
+    MenuServices,
+    SubmenuServices,
+    dish_services,
+    menu_services,
+    submenu_services,
 )
 
 app = FastAPI()
@@ -15,18 +18,24 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    redis.Redis(connection_pool=pool)
+    aioredis.from_url(REDIS_URL)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    cache = aioredis.from_url(REDIS_URL)
+    await cache.flushall()
 
 
 @app.get(
     "/api/v1/menus",
-    response_model=List[schemas.Menu],
+    response_model=list[schemas.Menu],
     summary="Список меню",
     description="Получение списка всех меню",
     status_code=HTTP_200_OK,
 )
-def list_menus(service: MenuServices = Depends(menu_services)):
-    return service.get_list_menus()
+async def list_menus(service: MenuServices = Depends(menu_services)):
+    return await service.get_list_menus()
 
 
 @app.get(
@@ -36,8 +45,8 @@ def list_menus(service: MenuServices = Depends(menu_services)):
     description="Получение меню по его идентификатору",
     status_code=HTTP_200_OK,
 )
-def get_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
-    return service.get_menu(id=menu_id)
+async def get_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
+    return await service.get_menu(id=menu_id)
 
 
 @app.post(
@@ -47,11 +56,11 @@ def get_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
     description="Создание меню",
     status_code=HTTP_201_CREATED,
 )
-def create_menu(
+async def create_menu(
     menu: schemas.MenuCreate,
     service: MenuServices = Depends(menu_services),
 ):
-    return service.create_menu(menu=menu)
+    return await service.create_menu(menu=menu)
 
 
 @app.patch(
@@ -61,12 +70,12 @@ def create_menu(
     description="Обновление меню",
     status_code=HTTP_200_OK,
 )
-def patch_menu(
+async def patch_menu(
     menu_id: int,
     menu: schemas.MenuUpdate,
     service: MenuServices = Depends(menu_services),
 ):
-    return service.update_menu(id=menu_id, menu=menu)
+    return await service.update_menu(id=menu_id, menu=menu)
 
 
 @app.delete(
@@ -76,19 +85,25 @@ def patch_menu(
     description="Удаление меню",
     status_code=HTTP_200_OK,
 )
-def delete_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
-    return service.delete_menu(id=menu_id)
+async def delete_menu(
+    menu_id: int,
+    service: MenuServices = Depends(menu_services),
+):
+    return await service.delete_menu(id=menu_id)
 
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus",
-    response_model=List[schemas.SubMenu],
+    response_model=list[schemas.SubMenu],
     summary="Список подменю",
     description="Получение списка подменю определенного меню",
     status_code=HTTP_200_OK,
 )
-def list_submenus(menu_id: int, service: SubmenuServices = Depends(submenu_services)):
-    return service.get_submenu_list(id=menu_id)
+async def list_submenus(
+    menu_id: int,
+    service: SubmenuServices = Depends(submenu_services),
+):
+    return await service.get_submenu_list(menu_id=menu_id)
 
 
 @app.get(
@@ -98,12 +113,12 @@ def list_submenus(menu_id: int, service: SubmenuServices = Depends(submenu_servi
     description="Получение подменю по его идентификатору",
     status_code=HTTP_200_OK,
 )
-def get_submenu(
+async def get_submenu(
     submenu_id: int,
     menu_id: int,
     service: SubmenuServices = Depends(submenu_services),
 ):
-    return service.get_submenu(
+    return await service.get_submenu(
         id=submenu_id,
         menu_id=menu_id,
     )
@@ -116,12 +131,12 @@ def get_submenu(
     description="Создание подменю",
     status_code=HTTP_201_CREATED,
 )
-def create_submenu(
+async def create_submenu(
     menu_id: int,
     submenu: schemas.SubMenuCreate,
     service: SubmenuServices = Depends(submenu_services),
 ):
-    return service.create_submenu(
+    return await service.create_submenu(
         submenu=submenu,
         menu_id=menu_id,
     )
@@ -134,11 +149,12 @@ def create_submenu(
     description="Удаление подменю",
     status_code=HTTP_200_OK,
 )
-def delete_submenu(
+async def delete_submenu(
     submenu_id: int,
+    menu_id: int,
     service: SubmenuServices = Depends(submenu_services),
 ):
-    return service.delete_submenu(id=submenu_id)
+    return await service.delete_submenu(id=submenu_id, menu_id=menu_id)
 
 
 @app.patch(
@@ -148,13 +164,13 @@ def delete_submenu(
     description="Обновление подменю",
     status_code=HTTP_200_OK,
 )
-def patch_submenu(
+async def patch_submenu(
     submenu_id: int,
     menu_id: int,
     submenu: schemas.SubMenuUpdate,
     service: SubmenuServices = Depends(submenu_services),
 ):
-    return service.update_submenu(
+    return await service.update_submenu(
         id=submenu_id,
         menu_id=menu_id,
         submenu=submenu,
@@ -163,17 +179,17 @@ def patch_submenu(
 
 @app.get(
     "/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes",
-    response_model=List[schemas.Dish],
+    response_model=list[schemas.Dish],
     summary="Список блюд",
     description="Получение списка блюд",
     status_code=HTTP_200_OK,
 )
-def list_dishes(
+async def list_dishes(
     submenu_id: int,
     menu_id: int,
     service: DishServices = Depends(dish_services),
 ):
-    return service.get_list_dishes(
+    return await service.get_list_dishes(
         submenu_id=submenu_id,
         menu_id=menu_id,
     )
@@ -186,13 +202,13 @@ def list_dishes(
     description="Получение блюда",
     status_code=HTTP_200_OK,
 )
-def get_dish(
+async def get_dish(
     dish_id: int,
     menu_id: int,
     submenu_id: int,
     service: DishServices = Depends(dish_services),
 ):
-    return service.get_dish(
+    return await service.get_dish(
         id=dish_id,
         menu_id=menu_id,
         submenu_id=submenu_id,
@@ -206,13 +222,13 @@ def get_dish(
     description="Создание блюда",
     status_code=HTTP_201_CREATED,
 )
-def create_dish(
+async def create_dish(
     dish: schemas.DishCreate,
     submenu_id: int,
     menu_id: int,
     service: DishServices = Depends(dish_services),
 ):
-    return service.create_dish(
+    return await service.create_dish(
         submenu_id=submenu_id,
         menu_id=menu_id,
         dish=dish,
@@ -226,14 +242,14 @@ def create_dish(
     description="Обновление блюда",
     status_code=HTTP_200_OK,
 )
-def patch_dish(
-    dish_id,
+async def patch_dish(
+    dish_id: int,
     menu_id: int,
     submenu_id: int,
     dish: schemas.DishCreate,
     service: DishServices = Depends(dish_services),
 ):
-    return service.update_dish(
+    return await service.update_dish(
         id=dish_id,
         dish=dish,
         menu_id=menu_id,
@@ -248,14 +264,47 @@ def patch_dish(
     response_model=schemas.DishDelete,
     status_code=HTTP_200_OK,
 )
-def delete_dish(
+async def delete_dish(
     dish_id: int,
     menu_id: int,
     submenu_id: int,
     service: DishServices = Depends(dish_services),
 ):
-    return service.delete_dish(
+    return await service.delete_dish(
         id=dish_id,
         menu_id=menu_id,
         submenu_id=submenu_id,
     )
+
+
+# @app.get(
+#     "/api/v1/download_test_data",
+#     description="Загрузка тестовых данных",
+#     summary="Загрузить тестовые данные",
+#     response_model=schemas.DishDelete,
+#     status_code=HTTP_200_OK,
+# )
+# async def download_test_data():
+#     pass
+
+
+# @app.get(
+#     "/api/v1/get_menu_file",
+#     description="Загрузка меню в виде excel файла",
+#     summary="Получение меню в excel",
+#     response_model=schemas.DishDelete,
+#     status_code=HTTP_200_OK,
+# )
+# async def get_menu_file():
+#     pass
+
+
+# @app.post(
+#     "/api/v1/create_menu_file",
+#     description="Создать меню в виде excel файла",
+#     summary="Создать меню в excel",
+#     response_model=schemas.DishDelete,
+#     status_code=HTTP_200_OK,
+# )
+# async def create_menu_file():
+#     pass

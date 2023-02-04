@@ -1,116 +1,174 @@
-from typing import Dict, List
+from sqlalchemy import delete, func, select, update
 
+from src.crud.base import BaseCrud
 from src.models.models import Dish, Menu, SubMenu
 from src.schemas import schemas
-from src.crud.base import BaseCrud
 
 
 class MenuCrud(BaseCrud):
+    async def get_menu_list(self) -> list[schemas.Menu]:
+        statement = select(
+            Menu.id,
+            Menu.title,
+            Menu.description,
+        ).group_by(Menu.id)
+        result = await self.session.execute(statement)
+        menu_list: list[schemas.Menu] = result.all()
+        return menu_list
 
-    def get_menu_list(self) -> List[schemas.Menu]:
-        return self.session.query(Menu).all()
+    async def get_menu(self, id: int) -> schemas.Menu:
+        statement = select(
+            Menu.id,
+            Menu.title,
+            Menu.description,
+        ).where(Menu.id == id)
+        result = await self.session.execute(statement)
+        menu = result.one_or_none()
+        return menu
 
-    def get_menu(self, id: int) -> schemas.Menu:
-        return self.session.query(Menu).filter_by(id=id).first()
-
-    def create_menu(self, data: Dict) -> schemas.Menu:
+    async def create_menu(self, data: dict) -> schemas.Menu:
         menu = Menu(**data)
         self.session.add(menu)
-        self.session.commit()
-        self.session.refresh(menu)
+        await self.session.commit()
+        await self.session.refresh(menu)
         return menu
 
-    def update_menu(self, menu: schemas.MenuUpdate) -> schemas.Menu:
-        self.session.add(menu)
-        self.session.commit()
-        self.session.refresh(menu)
-        return menu
+    async def update_menu(self, id: int, title: str, description: str) -> schemas.Menu:
+        statement = (
+            update(Menu)
+            .where(Menu.id == id)
+            .values(
+                title=title,
+                description=description,
+            )
+        )
+        return await self.session.execute(statement)
 
-    def delete_menu(self, id: int) -> None:
-        self.session.query(Menu).filter_by(id=id).delete()
-        self.session.commit()
+    async def delete_menu(self, id: int) -> None:
+        statement = delete(Menu).where(Menu.id == id)
+        await self.session.execute(statement)
+        await self.session.commit()
 
-    def get_submenus_count(self, id: int) -> int:
-        return self.session.query(SubMenu).filter_by(menu_id=id).count()
-
-    def get_dishes_count(self, id: int) -> int:
-        return self.session.query(Dish).filter(
-            Dish.submenu_id == SubMenu.id,
-        ).filter(
+    async def get_submenus_count(self, id: int) -> int:
+        statement = select(
+            func.count(SubMenu.id).label("count"),
+        ).where(
             SubMenu.menu_id == id,
-        ).count()
+        )
+        result = await self.session.execute(statement)
+        return result.scalar()
+
+    async def get_dishes_count(self, id: int) -> int:
+        statement = (
+            select(
+                func.count(Dish.id).label("dishes_count"),
+            )
+            .join(SubMenu)
+            .where(SubMenu.menu_id == id)
+        )
+        result = await self.session.execute(statement)
+        return result.scalar()
 
 
 class SubmenuCrud(BaseCrud):
+    async def get_submenu(self, id: int) -> schemas.SubMenu:
+        statement = select(
+            SubMenu.id,
+            SubMenu.title,
+            SubMenu.description,
+        ).where(SubMenu.id == id)
+        result = await self.session.execute(statement)
+        return result.one_or_none()
 
-    def get_submenu(self, id: int) -> schemas.SubMenu:
-        return self.session.query(SubMenu).filter_by(id=id).first()
+    async def get_submenu_list(self, menu_id: int) -> list[schemas.SubMenu]:
+        statement = select(SubMenu.id, SubMenu.title, SubMenu.description).where(
+            SubMenu.menu_id == menu_id,
+        )
+        result = await self.session.execute(statement)
+        submenu_list: list[schemas.SubMenu] = result.all()
+        return submenu_list
 
-    def get_submenu_list(self, id: int) -> List[schemas.SubMenu]:
-        return self.session.query(SubMenu).filter_by(menu_id=id).all()
-
-    def create_submenu(self, data: Dict, id: int) -> schemas.SubMenu:
+    async def create_submenu(self, data: dict, id: int) -> schemas.SubMenu:
         submenu = SubMenu(**data, menu_id=id)
         self.session.add(submenu)
-        self.session.commit()
-        self.session.refresh(submenu)
+        await self.session.commit()
+        await self.session.refresh(submenu)
         return submenu
 
-    def update_submenu(
+    async def update_submenu(
         self,
         id: int,
         title: str,
         description: str,
     ) -> schemas.SubMenu:
-        submenu = self.session.query(SubMenu).filter_by(id=id).one()
-        submenu.title = title
-        submenu.description = description
-        self.session.add(submenu)
-        self.session.commit()
-        self.session.refresh(submenu)
-        return submenu
+        statement = (
+            update(SubMenu)
+            .where(SubMenu.id == id)
+            .values(
+                title=title,
+                description=description,
+            )
+        )
+        return await self.session.execute(statement)
 
-    def delete_submenu(self, id: int) -> None:
-        self.session.query(SubMenu).filter_by(id=id).delete()
-        self.session.commit()
+    async def delete_submenu(self, id: int) -> None:
+        statement = delete(SubMenu).where(SubMenu.id == id)
+        await self.session.execute(statement)
+        await self.session.commit()
 
-    def get_dishes_count(self, id: int) -> int:
-        return self.session.query(Dish).filter(
-            Dish.submenu_id == id,
-        ).count()
+    async def get_dishes_count(self, id: int) -> int:
+        statement = select(
+            func.count(Dish.id).label("dishes_count"),
+        ).where(SubMenu.id == id)
+        result = await self.session.execute(statement)
+        return result.scalar()
 
 
 class DishCrud(BaseCrud):
+    async def get_dish(self, id: int) -> schemas.Dish:
+        statement = select(
+            Dish.id,
+            Dish.title,
+            Dish.description,
+            Dish.price,
+        ).where(Dish.id == id)
+        result = await self.session.execute(statement)
+        return result.one_or_none()
 
-    def get_dish(self, id: int) -> schemas.Dish:
-        return self.session.query(Dish).filter_by(id=id).first()
+    async def get_list_dish(self, id_submenu: int) -> list[schemas.Dish]:
+        statement = select(Dish.id, Dish.title, Dish.description, Dish.price).where(
+            Dish.submenu_id == id_submenu,
+        )
+        result = await self.session.execute(statement)
+        dish_list: list[schemas.Dish] = result.all()
+        return dish_list
 
-    def get_list_dish(self, id_submenu: int) -> List[schemas.Dish]:
-        return self.session.query(Dish).filter_by(submenu_id=id_submenu).all()
-
-    def create_dish(self, data: Dict, id: int) -> schemas.Dish:
+    async def create_dish(self, data: dict, id: int) -> schemas.Dish:
         dish = Dish(**data, submenu_id=id)
         self.session.add(dish)
-        self.session.commit()
-        self.session.refresh(dish)
+        await self.session.commit()
+        await self.session.refresh(dish)
         return dish
 
-    def update_dish(
+    async def update_dish(
         self,
         id: int,
         title: str,
         description: str,
         price: str,
     ) -> schemas.Dish:
-        dish = self.session.query(Dish).filter_by(id=id).one()
-        dish.title = title
-        dish.description = description
-        dish.price = price
-        self.session.add(dish)
-        self.session.commit()
-        self.session.refresh(dish)
-        return dish
+        statement = (
+            update(Dish)
+            .where(Dish.id == id)
+            .values(
+                title=title,
+                description=description,
+                price=price,
+            )
+        )
+        return await self.session.execute(statement)
 
-    def delete_dish(self, id: int) -> None:
-        self.session.query(Dish).filter_by(id=id).delete()
-        self.session.commit()
+    async def delete_dish(self, id: int) -> None:
+        statement = delete(Dish).where(Dish.id == id)
+        await self.session.execute(statement)
+        await self.session.commit()

@@ -1,4 +1,4 @@
-import redis
+import aioredis
 
 from src.settings import settings
 
@@ -9,9 +9,12 @@ REDIS_DB = settings.REDIS_DB
 if not settings.docker_mode:
     REDIS_HOST = "localhost"
 
-pool = redis.ConnectionPool(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    db=REDIS_DB,
-)
-redis_cache = redis.Redis(connection_pool=pool)
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+
+
+async def get_cache():
+    cache = aioredis.from_url(REDIS_URL)
+    try:
+        yield cache
+    finally:
+        await cache.close()

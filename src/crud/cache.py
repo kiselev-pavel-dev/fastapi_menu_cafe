@@ -1,30 +1,27 @@
 import json
-from typing import Any, List
+from typing import Any
 
 from fastapi.encoders import jsonable_encoder
 
-from src.db.redis_config import redis_cache
-
 
 class RedisCache:
+    def __init__(self, cache: Any) -> None:
+        self.cache = cache
 
-    def get(self, key: str) -> Any | None:
-        data = redis_cache.get(name=key)
+    async def get(self, key: str) -> Any | None:
+        data = await self.cache.get(key)
         if not data:
             return None
         return json.loads(data)
 
-    def set(self, key: str, value: Any) -> None:
+    async def set(self, key: str, value: Any) -> None:
         data = json.dumps(jsonable_encoder(value))
-        redis_cache.set(name=key, value=data)
+        await self.cache.set(key, data)
 
-    def delete_one(self, keys: List[str] | str) -> None:
-        redis_cache.delete(*keys)
+    async def delete_one(self, keys: list[str] | str) -> None:
+        await self.cache.delete(*keys)
 
-    def delete_all(self, key: str) -> None:
-        keys = redis_cache.keys(f"{key}*")
+    async def delete_all(self, key: str) -> None:
+        keys = await self.cache.keys(f"{key}*")
         if keys:
-            redis_cache.delete(*keys)
-
-
-cache = RedisCache()
+            await self.cache.delete(*keys)

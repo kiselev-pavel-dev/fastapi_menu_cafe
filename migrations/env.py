@@ -22,7 +22,8 @@ config = context.config
 section = config.config_ini_section
 config.set_section_option(section, "POSTGRES_USER", POSTGRES_USER)
 config.set_section_option(
-    section, "POSTGRES_PASSWORD",
+    section,
+    "POSTGRES_PASSWORD",
     POSTGRES_PASSWORD,
 )
 config.set_section_option(section, "DB_HOST", DB_HOST)
@@ -85,7 +86,8 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
+            connection=connection,
+            target_metadata=target_metadata,
         )
 
         with context.begin_transaction():
