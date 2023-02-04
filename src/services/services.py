@@ -1,3 +1,6 @@
+import json
+
+import aiofiles
 from aioredis import Redis
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
@@ -6,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
 
 from src.crud.cache import RedisCache
-from src.crud.crud import DishCrud, MenuCrud, SubmenuCrud
+from src.crud.crud import DishCrud, MenuCrud, SubmenuCrud, TestDataCrud
 from src.db.database import get_session
 from src.db.redis_config import get_cache
 from src.schemas.schemas import (
@@ -272,6 +275,43 @@ class DishServices(BaseService):
             )
 
 
+class TestDataServices:
+    def __init__(self, crud: TestDataCrud) -> None:
+        self.crud = crud
+
+    async def test_data_create(self) -> None:
+        await self.crud.delete_all_tables()
+        async with aiofiles.open(
+            "test_data/menus.json", mode="r", encoding="utf-8"
+        ) as f:
+            content = await f.read()
+            data = json.loads(content)
+        for item in data:
+            menu_data = {
+                "id": int(item["id"]),
+                "title": item["title"],
+                "description": item["description"],
+            }
+            await self.crud.create_menu(menu_data=menu_data)
+            for item_submenu in item["submenu"]:
+                submenu_data = {
+                    "id": int(item_submenu["id"]),
+                    "title": item_submenu["title"],
+                    "description": item_submenu["description"],
+                    "menu_id": int(item["id"]),
+                }
+                await self.crud.create_submenu(submenu_data=submenu_data)
+                for item_dish in item_submenu["dishes"]:
+                    dish_data = {
+                        "id": int(item_dish["id"]),
+                        "title": item_dish["title"],
+                        "description": item_dish["description"],
+                        "price": item_dish["price"],
+                        "submenu_id": int(item_submenu["id"]),
+                    }
+                    await self.crud.create_dish(dish_data=dish_data)
+
+
 async def menu_services(
     session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_cache)
 ) -> MenuServices:
@@ -294,3 +334,8 @@ def dish_services(
     crud = DishCrud(session=session)
     cache = RedisCache(cache=cache)
     return DishServices(crud=crud, cache=cache)
+
+
+def test_data_service(session: AsyncSession = Depends(get_session)) -> TestDataServices:
+    crud = TestDataCrud(session=session)
+    return TestDataServices(crud=crud)

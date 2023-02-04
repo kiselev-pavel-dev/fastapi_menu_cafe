@@ -172,3 +172,32 @@ class DishCrud(BaseCrud):
         statement = delete(Dish).where(Dish.id == id)
         await self.session.execute(statement)
         await self.session.commit()
+
+
+class TestDataCrud(BaseCrud):
+    async def delete_all_tables(self) -> None:
+        statement = delete(Menu)
+        await self.session.execute(statement)
+        statement = delete(SubMenu)
+        await self.session.execute(statement)
+        statement = delete(Dish)
+        await self.session.execute(statement)
+        await self.session.commit()
+
+    async def create_menu(self, menu_data: dict) -> None:
+        menu = Menu(**menu_data)
+        self.session.add(menu)
+        await self.session.commit()
+        await self.session.refresh(menu)
+
+    async def create_submenu(self, submenu_data: dict) -> None:
+        submenu = SubMenu(**submenu_data)
+        self.session.add(submenu)
+        await self.session.commit()
+        await self.session.refresh(submenu)
+
+    async def create_dish(self, dish_data: dict) -> None:
+        dish = Dish(**dish_data)
+        self.session.add(dish)
+        await self.session.commit()
+        await self.session.refresh(dish)

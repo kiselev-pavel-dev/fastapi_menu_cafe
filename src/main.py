@@ -8,9 +8,11 @@ from src.services.services import (
     DishServices,
     MenuServices,
     SubmenuServices,
+    TestDataServices,
     dish_services,
     menu_services,
     submenu_services,
+    test_data_service,
 )
 
 app = FastAPI()
@@ -277,15 +279,14 @@ async def delete_dish(
     )
 
 
-# @app.get(
-#     "/api/v1/download_test_data",
-#     description="Загрузка тестовых данных",
-#     summary="Загрузить тестовые данные",
-#     response_model=schemas.DishDelete,
-#     status_code=HTTP_200_OK,
-# )
-# async def download_test_data():
-#     pass
+@app.get(
+    "/api/v1/download_test_data",
+    description="Загрузка тестовых данных",
+    summary="Загрузить тестовые данные",
+    status_code=HTTP_200_OK,
+)
+async def download_test_data(service: TestDataServices = Depends(test_data_service)):
+    return await service.test_data_create()
 
 
 # @app.get(

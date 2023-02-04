@@ -1,16 +1,17 @@
+import asyncio
+
 import aioredis
 import pytest_asyncio
-import asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils.functions import create_database, database_exists
 
+from src.crud.crud import DishCrud, MenuCrud, SubmenuCrud
 from src.db.database import get_session
 from src.main import app
 from src.models.models import Base
 from src.settings import settings
-from src.crud.crud import MenuCrud, SubmenuCrud, DishCrud
 
 POSTGRES_USER = settings.POSTGRES_USER
 POSTGRES_PASSWORD = settings.POSTGRES_PASSWORD
