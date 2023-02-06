@@ -43,8 +43,8 @@ services:
     volumes:
       - ./rabbitmq:/var/lib/rabbitmq
     ports:
-      - 15672:15672
-      - 5672:5672
+      - "15672:15672"
+      - "5672:5672"
     networks:
       - web_network
     healthcheck:
