@@ -1,5 +1,6 @@
 import aioredis
 from fastapi import Depends, FastAPI
+from fastapi.responses import FileResponse
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_202_ACCEPTED
 
 from src.db.database import init_db
@@ -37,6 +38,7 @@ async def shutdown_event():
     summary="Список меню",
     description="Получение списка всех меню",
     status_code=HTTP_200_OK,
+    tags=["Меню"],
 )
 async def list_menus(service: MenuServices = Depends(menu_services)):
     return await service.get_list_menus()
@@ -48,6 +50,7 @@ async def list_menus(service: MenuServices = Depends(menu_services)):
     summary="Получить меню",
     description="Получение меню по его идентификатору",
     status_code=HTTP_200_OK,
+    tags=["Меню"],
 )
 async def get_menu(menu_id: int, service: MenuServices = Depends(menu_services)):
     return await service.get_menu(id=menu_id)
@@ -59,6 +62,7 @@ async def get_menu(menu_id: int, service: MenuServices = Depends(menu_services))
     summary="Создать меню",
     description="Создание меню",
     status_code=HTTP_201_CREATED,
+    tags=["Меню"],
 )
 async def create_menu(
     menu: schemas.MenuCreate,
@@ -73,6 +77,7 @@ async def create_menu(
     summary="Обновить меню",
     description="Обновление меню",
     status_code=HTTP_200_OK,
+    tags=["Меню"],
 )
 async def patch_menu(
     menu_id: int,
@@ -88,6 +93,7 @@ async def patch_menu(
     summary="Удалить меню",
     description="Удаление меню",
     status_code=HTTP_200_OK,
+    tags=["Меню"],
 )
 async def delete_menu(
     menu_id: int,
@@ -102,6 +108,7 @@ async def delete_menu(
     summary="Список подменю",
     description="Получение списка подменю определенного меню",
     status_code=HTTP_200_OK,
+    tags=["Подменю"],
 )
 async def list_submenus(
     menu_id: int,
@@ -116,6 +123,7 @@ async def list_submenus(
     summary="Получить подменю",
     description="Получение подменю по его идентификатору",
     status_code=HTTP_200_OK,
+    tags=["Подменю"],
 )
 async def get_submenu(
     submenu_id: int,
@@ -134,6 +142,7 @@ async def get_submenu(
     summary="Создать подменю",
     description="Создание подменю",
     status_code=HTTP_201_CREATED,
+    tags=["Подменю"],
 )
 async def create_submenu(
     menu_id: int,
@@ -152,6 +161,7 @@ async def create_submenu(
     summary="Удалить подменю",
     description="Удаление подменю",
     status_code=HTTP_200_OK,
+    tags=["Подменю"],
 )
 async def delete_submenu(
     submenu_id: int,
@@ -167,6 +177,7 @@ async def delete_submenu(
     summary="Обновить подменю",
     description="Обновление подменю",
     status_code=HTTP_200_OK,
+    tags=["Подменю"],
 )
 async def patch_submenu(
     submenu_id: int,
@@ -187,6 +198,7 @@ async def patch_submenu(
     summary="Список блюд",
     description="Получение списка блюд",
     status_code=HTTP_200_OK,
+    tags=["Блюда"],
 )
 async def list_dishes(
     submenu_id: int,
@@ -205,6 +217,7 @@ async def list_dishes(
     summary="Получить блюдо",
     description="Получение блюда",
     status_code=HTTP_200_OK,
+    tags=["Блюда"],
 )
 async def get_dish(
     dish_id: int,
@@ -225,6 +238,7 @@ async def get_dish(
     summary="Создать блюдо",
     description="Создание блюда",
     status_code=HTTP_201_CREATED,
+    tags=["Блюда"],
 )
 async def create_dish(
     dish: schemas.DishCreate,
@@ -245,6 +259,7 @@ async def create_dish(
     summary="Обновить блюдо",
     description="Обновление блюда",
     status_code=HTTP_200_OK,
+    tags=["Блюда"],
 )
 async def patch_dish(
     dish_id: int,
@@ -267,6 +282,7 @@ async def patch_dish(
     summary="Удалить блюдо",
     response_model=schemas.DishDelete,
     status_code=HTTP_200_OK,
+    tags=["Блюда"],
 )
 async def delete_dish(
     dish_id: int,
@@ -286,6 +302,7 @@ async def delete_dish(
     description="Загрузка тестовых данных",
     summary="Загрузить тестовые данные",
     status_code=HTTP_200_OK,
+    tags=["Создание тестовых данных"],
 )
 async def download_test_data(service: TestDataServices = Depends(test_data_service)):
     return await service.test_data_create()
@@ -295,7 +312,9 @@ async def download_test_data(service: TestDataServices = Depends(test_data_servi
     "/api/v1/get_menu_file/{id}",
     description="Загрузка меню в виде excel файла",
     summary="Получение меню в excel",
+    response_class=FileResponse,
     status_code=HTTP_200_OK,
+    tags=["Создание и получение меню в excel"],
 )
 async def get_menu_file(id: str, service: MenuServices = Depends(menu_services)):
     return await service.get_menu_excel_file(id=id)
@@ -306,6 +325,7 @@ async def get_menu_file(id: str, service: MenuServices = Depends(menu_services))
     description="Создать меню в виде excel файла",
     summary="Создать меню в excel",
     status_code=HTTP_202_ACCEPTED,
+    tags=["Создание и получение меню в excel"],
 )
 async def create_menu_file(service: MenuServices = Depends(menu_services)):
     return await service.create_menu_excel_file()

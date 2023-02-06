@@ -93,7 +93,7 @@ class MenuServices(BaseService):
     async def get_menu_excel_file(self, id: str) -> dict:
         return FileResponse(
             path=f"/uploads/{id}.xlsx",
-            media_type="application/octet-stream",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             filename="Menu.xlsx",
         )
 
