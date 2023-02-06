@@ -1,13 +1,15 @@
 import json
 
-import aiofiles
+import aiofiles  # type: ignore
 from aioredis import Redis
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_404_NOT_FOUND
 
+from src.celery.tasks import app_celery
 from src.crud.cache import RedisCache
 from src.crud.crud import DishCrud, MenuCrud, SubmenuCrud, TestDataCrud
 from src.db.database import get_session
@@ -31,13 +33,18 @@ class MenuServices(BaseService):
         redis_key = "menu:list"
         menus = await self.cache.get(redis_key)
         if not menus:
-            menus = await self.crud.get_menu_list()
-            for menu in menus:
-                submenus_count = await self.crud.get_submenus_count(id=int(menu.id))
-                dishes_count = await self.crud.get_dishes_count(id=int(menu.id))
-                menu = dict(menu)
+            res = await self.crud.get_menu_list()
+            menus = []
+            for item in res:
+                menu = dict()
+                submenus_count = await self.crud.get_submenus_count(id=item.id)
+                dishes_count = await self.crud.get_dishes_count(id=item.id)
+                menu["id"] = item.id
+                menu["title"] = item.title
+                menu["description"] = item.description
                 menu["submenus_count"] = submenus_count
                 menu["dishes_count"] = dishes_count
+                menus.append(menu)
             await self.cache.set(redis_key, menus)
         return menus
 
@@ -65,9 +72,7 @@ class MenuServices(BaseService):
         current_menu = await self.crud.get_menu(id=id)
         self.menu_empty(not current_menu)
         await self.cache.delete_one(redis_key)
-        await self.crud.update_menu(
-            id=id, title=menu.title, description=menu.description
-        )
+        await self.crud.update_menu(id=id, title=menu.title, description=menu.description)
         return await self.get_menu(id=id)
 
     async def delete_menu(self, id: int) -> dict:
@@ -79,6 +84,18 @@ class MenuServices(BaseService):
         await self.cache.delete_all(f"submenu:{id}:")
         await self.cache.delete_all(f"dish:{menu.id}:")
         return {"status": True, "message": "The menu has been deleted"}
+
+    async def create_menu_excel_file(self) -> dict:
+        data = await self.crud.get_all_data_from_menus_submenus_dishes()
+        task = app_celery.send_task("create_excel", kwargs={"data": data})
+        return {"task_id": task.id}
+
+    async def get_menu_excel_file(self, id: str) -> dict:
+        return FileResponse(
+            path=f"/uploads/{id}.xlsx",
+            media_type="application/octet-stream",
+            filename="Menu.xlsx",
+        )
 
     def menu_empty(self, empty: bool) -> None:
         if empty:
@@ -107,13 +124,18 @@ class SubmenuServices(BaseService):
         redis_key = f"submenu:{menu_id}:list"
         submenus = await self.cache.get(redis_key)
         if not submenus:
-            submenus = await self.crud.get_submenu_list(menu_id=menu_id)
-            for submenu in submenus:
+            result = await self.crud.get_submenu_list(menu_id=menu_id)
+            submenus = []
+            for item in result:
+                submenu = dict()
                 dishes_count = await self.crud.get_dishes_count(
-                    id=int(submenu.id),
+                    id=int(item.id),
                 )
-                submenu = dict(submenu)
+                submenu["id"] = item.id
+                submenu["title"] = item.title
+                submenu["description"] = item.description
                 submenu["dishes_count"] = dishes_count
+                submenus.append(submenu)
             await self.cache.set(redis_key, submenus)
         return submenus
 
@@ -279,11 +301,9 @@ class TestDataServices:
     def __init__(self, crud: TestDataCrud) -> None:
         self.crud = crud
 
-    async def test_data_create(self) -> None:
+    async def test_data_create(self) -> dict:
         await self.crud.delete_all_tables()
-        async with aiofiles.open(
-            "test_data/menus.json", mode="r", encoding="utf-8"
-        ) as f:
+        async with aiofiles.open("test_data/menus.json", mode="r", encoding="utf-8") as f:
             content = await f.read()
             data = json.loads(content)
         for item in data:
@@ -310,6 +330,7 @@ class TestDataServices:
                         "submenu_id": int(item_submenu["id"]),
                     }
                     await self.crud.create_dish(dish_data=dish_data)
+        return {"status": True, "message": "Test data uploaded successfully!"}
 
 
 async def menu_services(
@@ -320,7 +341,7 @@ async def menu_services(
     return MenuServices(crud=crud, cache=cache)
 
 
-def submenu_services(
+async def submenu_services(
     session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_cache)
 ) -> SubmenuServices:
     crud = SubmenuCrud(session=session)
@@ -328,7 +349,7 @@ def submenu_services(
     return SubmenuServices(crud=crud, cache=cache)
 
 
-def dish_services(
+async def dish_services(
     session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_cache)
 ) -> DishServices:
     crud = DishCrud(session=session)
@@ -336,6 +357,8 @@ def dish_services(
     return DishServices(crud=crud, cache=cache)
 
 
-def test_data_service(session: AsyncSession = Depends(get_session)) -> TestDataServices:
+async def test_data_service(
+    session: AsyncSession = Depends(get_session),
+) -> TestDataServices:
     crud = TestDataCrud(session=session)
     return TestDataServices(crud=crud)

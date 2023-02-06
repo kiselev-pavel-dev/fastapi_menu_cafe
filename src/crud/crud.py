@@ -1,4 +1,4 @@
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 
 from src.crud.base import BaseCrud
 from src.models.models import Dish, Menu, SubMenu
@@ -11,7 +11,7 @@ class MenuCrud(BaseCrud):
             Menu.id,
             Menu.title,
             Menu.description,
-        ).group_by(Menu.id)
+        )
         result = await self.session.execute(statement)
         menu_list: list[schemas.Menu] = result.all()
         return menu_list
@@ -69,6 +69,17 @@ class MenuCrud(BaseCrud):
         result = await self.session.execute(statement)
         return result.scalar()
 
+    async def get_all_data_from_menus_submenus_dishes(self) -> dict:
+        sql_query = text(
+            """SELECT json_build_object('menus',
+            (SELECT json_agg(row_to_json("menus")) from "menus"),
+            'submenus', (SELECT json_agg(row_to_json("submenus"))
+            from "submenus"),'dishes', (SELECT json_agg(row_to_json("dishes"))
+             from "dishes"))"""
+        )
+        result = await self.session.execute(sql_query)
+        return result.scalar()
+
 
 class SubmenuCrud(BaseCrud):
     async def get_submenu(self, id: int) -> schemas.SubMenu:
@@ -119,7 +130,7 @@ class SubmenuCrud(BaseCrud):
     async def get_dishes_count(self, id: int) -> int:
         statement = select(
             func.count(Dish.id).label("dishes_count"),
-        ).where(SubMenu.id == id)
+        ).where(Dish.submenu_id == id)
         result = await self.session.execute(statement)
         return result.scalar()
 

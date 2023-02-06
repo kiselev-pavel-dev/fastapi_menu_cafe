@@ -1,7 +1,8 @@
 import aioredis
 from fastapi import Depends, FastAPI
-from starlette.status import HTTP_200_OK, HTTP_201_CREATED
+from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_202_ACCEPTED
 
+from src.db.database import init_db
 from src.db.redis_config import REDIS_URL
 from src.schemas import schemas
 from src.services.services import (
@@ -20,6 +21,7 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
+    await init_db()
     aioredis.from_url(REDIS_URL)
 
 
@@ -289,23 +291,21 @@ async def download_test_data(service: TestDataServices = Depends(test_data_servi
     return await service.test_data_create()
 
 
-# @app.get(
-#     "/api/v1/get_menu_file",
-#     description="Загрузка меню в виде excel файла",
-#     summary="Получение меню в excel",
-#     response_model=schemas.DishDelete,
-#     status_code=HTTP_200_OK,
-# )
-# async def get_menu_file():
-#     pass
+@app.get(
+    "/api/v1/get_menu_file/{id}",
+    description="Загрузка меню в виде excel файла",
+    summary="Получение меню в excel",
+    status_code=HTTP_200_OK,
+)
+async def get_menu_file(id: str, service: MenuServices = Depends(menu_services)):
+    return await service.get_menu_excel_file(id=id)
 
 
-# @app.post(
-#     "/api/v1/create_menu_file",
-#     description="Создать меню в виде excel файла",
-#     summary="Создать меню в excel",
-#     response_model=schemas.DishDelete,
-#     status_code=HTTP_200_OK,
-# )
-# async def create_menu_file():
-#     pass
+@app.post(
+    "/api/v1/create_menu_file",
+    description="Создать меню в виде excel файла",
+    summary="Создать меню в excel",
+    status_code=HTTP_202_ACCEPTED,
+)
+async def create_menu_file(service: MenuServices = Depends(menu_services)):
+    return await service.create_menu_excel_file()

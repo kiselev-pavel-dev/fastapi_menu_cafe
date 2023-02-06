@@ -41,6 +41,12 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
 
+RABBIT_HOST=rabbitmq
+RABBIT_USER=guest
+RABBIT_PASSWORD=guest
+RABBIT_PORT=5672
+
+
 ```
 6. Если запускаете проект локально, то в файле src/settings.py укажите:
 
