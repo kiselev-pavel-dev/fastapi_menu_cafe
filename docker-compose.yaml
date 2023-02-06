@@ -34,6 +34,8 @@ services:
     image: rabbitmq:3.10.7-management
     hostname: rabbitmq
     restart: always
+    env_file:
+      - ./.env
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest

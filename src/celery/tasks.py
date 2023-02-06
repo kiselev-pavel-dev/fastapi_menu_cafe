@@ -1,8 +1,9 @@
-import openpyxl
 import os
 
-from celery import Celery
+import openpyxl
 from dotenv import load_dotenv
+
+from celery import Celery
 
 load_dotenv()
 
