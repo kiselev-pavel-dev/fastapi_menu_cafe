@@ -6,6 +6,9 @@
     FastAPI
     PostgreSQL
     Pytest
+    Redis
+    Celery
+    RabbitMQ
     Docker (docker-compose)
 
 # Запуск и работа с проектом
